@@ -1,125 +1,148 @@
 import Link from 'next/link'
-import { Clock, Sparkles, Heart, Flower2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { formatDuration } from '@/lib/utils'
+import Image from 'next/image'
+import { Icon } from '@/components/icon'
+import { C, FONTS, durLabel } from '@/lib/design'
 
-const services = [
-  {
-    name: 'Spá de mão',
-    duration: 15,
-    icon: Sparkles,
-    description: 'Hidratação e cuidado completo para suas mãos',
-  },
-  {
-    name: 'Esmaltação normal com cuticulagem',
-    duration: 90,
-    icon: Heart,
-    description: 'Esmalte tradicional com cuticulagem profissional',
-  },
-  {
-    name: 'Esmaltação em gel com cuticulagem',
-    duration: 120,
-    icon: Flower2,
-    description: 'Esmalte em gel de longa duração com cuticulagem',
-  },
-  {
-    name: 'Cuticulagem e extensão de unha',
-    duration: 180,
-    icon: Sparkles,
-    description: 'Extensão completa com cuticulagem especializada',
-  },
+const SERVICES = [
+  { id: '1', name: 'Spá de mão',          sub: '',                dur: 15,  blurb: 'Hidratação e esfoliação para mãos macias e renovadas.' },
+  { id: '2', name: 'Esmaltação normal',    sub: 'com cuticulagem', dur: 90,  blurb: 'Cuticulagem completa e esmalte tradicional com acabamento impecável.' },
+  { id: '3', name: 'Esmaltação em gel',    sub: 'com cuticulagem', dur: 120, blurb: 'Cor intensa e duradoura em gel, com brilho que dura semanas.' },
+  { id: '4', name: 'Extensão de unha',     sub: 'e cuticulagem',   dur: 180, blurb: 'Alongamento sob medida com modelagem e finalização premium.' },
 ]
+
+function Photo({ label, h = 150 }: { label: string; h?: number }) {
+  const id = label.replace(/\s/g, '')
+  return (
+    <div style={{ height: h, borderRadius: 18, overflow: 'hidden', position: 'relative', background: C.areia, border: `1px solid ${C.line}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0 }} preserveAspectRatio="none">
+        <defs>
+          <pattern id={id} width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="14" height="14" fill={C.areia} />
+            <line x1="0" y1="0" x2="0" y2="14" stroke={C.rose} strokeOpacity="0.30" strokeWidth="7" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill={`url(#${id})`} />
+      </svg>
+      <span style={{ position: 'relative', fontFamily: 'ui-monospace, monospace', fontSize: 11, letterSpacing: 0.5, color: C.cafe, background: 'rgba(250,248,246,0.82)', padding: '5px 10px', borderRadius: 999 }}>{label}</span>
+    </div>
+  )
+}
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <header className="bg-white border-b border-pink-100 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-bold text-pink-700">Toque de Lírio</h1>
-            <p className="text-xs text-gray-400">by Natielle</p>
-          </div>
-          <Link href="/admin" className="text-xs text-gray-400 hover:text-pink-600 transition-colors">
-            Área da profissional
-          </Link>
-        </div>
-      </header>
+    <div style={{ background: C.off, minHeight: '100vh', paddingBottom: 96 }}>
 
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-pink-600 to-rose-500 text-white py-16 px-4">
-        <div className="max-w-2xl mx-auto text-center">
-          <p className="text-pink-200 text-sm font-medium uppercase tracking-widest mb-3">
-            Bem-vinda ao estúdio
-          </p>
-          <h2 className="text-4xl font-bold mb-4">
-            Toque de Lírio
-            <span className="block text-2xl font-normal text-pink-100 mt-1">by Natielle</span>
-          </h2>
-          <p className="text-pink-100 mb-8 text-lg">
-            Cuidado e elegância para suas unhas. Agende agora seu horário de conforto.
-          </p>
-          <Link href="/agendar">
-            <Button
-              size="lg"
-              className="bg-white text-pink-700 hover:bg-pink-50 font-bold shadow-lg px-10"
-            >
-              Agendar meu horário
-            </Button>
-          </Link>
-          <p className="text-pink-200 text-sm mt-4 flex items-center justify-center gap-1">
-            <Clock className="w-4 h-4" />
-            Atendimento: 16h às 20h
-          </p>
-        </div>
-      </section>
+      {/* Admin link */}
+      <div style={{ position: 'absolute', top: 16, right: 20, zIndex: 10 }}>
+        <Link href="/admin" style={{ fontFamily: FONTS.montserrat, fontSize: 11, fontWeight: 600, letterSpacing: 0.5, color: C.muted, textDecoration: 'none' }}>
+          Área da profissional
+        </Link>
+      </div>
 
-      {/* Services */}
-      <section className="py-14 px-4">
-        <div className="max-w-4xl mx-auto">
-          <h3 className="text-2xl font-bold text-gray-800 text-center mb-2">Nossos serviços</h3>
-          <p className="text-gray-500 text-center mb-8">
-            Escolha o procedimento ideal para você
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {services.map((s) => {
-              const Icon = s.icon
-              return (
-                <Card key={s.name} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6 flex gap-4 items-start">
-                    <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center shrink-0">
-                      <Icon className="w-5 h-5 text-pink-600" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-1">{s.name}</h4>
-                      <p className="text-sm text-gray-500 mb-2">{s.description}</p>
-                      <span className="text-xs font-medium text-pink-600 bg-pink-50 px-2 py-0.5 rounded-full">
-                        {formatDuration(s.duration)}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-
-          <div className="text-center mt-10">
-            <Link href="/agendar">
-              <Button size="lg" className="px-10">
-                Quero agendar agora
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-pink-100 py-6 px-4 bg-white">
-        <p className="text-center text-sm text-gray-400">
-          © {new Date().getFullYear()} Toque de Lírio by Natielle · Todos os direitos reservados
+      {/* HERO */}
+      <div style={{
+        background: `radial-gradient(120% 90% at 50% -10%, ${C.white} 0%, ${C.areia} 55%, ${C.off} 100%)`,
+        padding: '54px 24px 36px', textAlign: 'center', position: 'relative',
+        borderBottomLeftRadius: 34, borderBottomRightRadius: 34,
+      }}>
+        <Image
+          src="/assets/logo-vertical.png"
+          alt="Lumi Nails Studios"
+          width={184} height={200}
+          style={{ width: 184, height: 'auto', maxWidth: '64%', display: 'block', margin: '0 auto' }}
+          priority
+        />
+        <p style={{ fontFamily: FONTS.cormorant, fontStyle: 'italic', fontSize: 19, color: C.taupe, margin: '14px auto 0', maxWidth: 280, lineHeight: 1.4 }}>
+          O cuidado das suas mãos, no seu tempo — agende online em segundos.
         </p>
-      </footer>
+        <div style={{ marginTop: 22, maxWidth: 250, margin: '22px auto 0' }}>
+          <Link href="/agendar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', border: 'none', cursor: 'pointer', background: C.taupe, color: C.white, fontFamily: FONTS.montserrat, fontWeight: 600, fontSize: 15, letterSpacing: 0.3, padding: '15px 22px', borderRadius: 16, boxShadow: '0 8px 20px rgba(141,123,109,0.30)', textDecoration: 'none' }}>
+            <Icon name="sparkle" size={16} stroke="#fff" /> Agendar horário
+          </Link>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 18, marginTop: 18, flexWrap: 'wrap' }}>
+          <span style={{ fontFamily: FONTS.montserrat, fontSize: 11.5, color: C.muted, display: 'inline-flex', gap: 5, alignItems: 'center' }}>
+            <Icon name="clock" size={14} stroke={C.rose} /> Seg–Sáb · 16h às 20h
+          </span>
+          <span style={{ fontFamily: FONTS.montserrat, fontSize: 11.5, color: C.muted, display: 'inline-flex', gap: 5, alignItems: 'center' }}>
+            <Icon name="map" size={14} stroke={C.rose} /> São Paulo · SP
+          </span>
+        </div>
+      </div>
+
+      {/* SERVIÇOS */}
+      <div style={{ padding: '30px 20px 8px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 18 }}>
+          <div style={{ fontFamily: FONTS.montserrat, fontSize: 11, fontWeight: 600, letterSpacing: 2, color: C.rose, textTransform: 'uppercase' }}>Nossos serviços</div>
+          <h2 style={{ fontFamily: FONTS.playfair, fontSize: 26, color: C.ink, margin: '4px 0 0', fontWeight: 500 }}>Escolha seu cuidado</h2>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480, margin: '0 auto' }}>
+          {SERVICES.map(s => (
+            <Link key={s.id} href="/agendar" style={{ textDecoration: 'none', display: 'block' }}>
+              <div style={{ background: C.white, border: `1.5px solid ${C.line}`, borderRadius: 18, padding: '16px 18px', boxShadow: '0 2px 8px rgba(107,91,82,0.04)', cursor: 'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: FONTS.playfair, fontSize: 18, color: C.ink, lineHeight: 1.15 }}>{s.name}</div>
+                    {s.sub && <div style={{ fontFamily: FONTS.cormorant, fontStyle: 'italic', fontSize: 15, color: C.taupe, marginTop: 1 }}>{s.sub}</div>}
+                    <div style={{ fontFamily: FONTS.montserrat, fontSize: 12.5, color: C.muted, lineHeight: 1.5, marginTop: 8 }}>{s.blurb}</div>
+                  </div>
+                  <Icon name="sparkle" size={20} stroke={C.rose} style={{ flexShrink: 0, marginTop: 2 }} />
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(216,182,164,0.22)', color: C.cafe, fontFamily: FONTS.montserrat, fontSize: 11.5, fontWeight: 600, letterSpacing: 0.4, padding: '5px 11px', borderRadius: 999 }}>
+                    <Icon name="clock" size={13} stroke={C.cafe} /> {durLabel(s.dur)}
+                  </span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* PORTFÓLIO */}
+      <div style={{ padding: '28px 20px 8px', maxWidth: 480, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <div style={{ fontFamily: FONTS.montserrat, fontSize: 11, fontWeight: 600, letterSpacing: 2, color: C.rose, textTransform: 'uppercase' }}>Portfólio</div>
+          <h2 style={{ fontFamily: FONTS.playfair, fontSize: 26, color: C.ink, margin: '4px 0 0', fontWeight: 500 }}>Trabalhos recentes</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <Photo label="foto · unhas em gel" h={150} />
+          <Photo label="foto · nail art" h={150} />
+          <Photo label="foto · francesinha" h={120} />
+          <Photo label="foto · extensão" h={120} />
+        </div>
+      </div>
+
+      {/* ASSINATURA */}
+      <div style={{ padding: '30px 24px 10px', textAlign: 'center', maxWidth: 480, margin: '0 auto' }}>
+        <Icon name="sparkle" size={22} stroke={C.rose} style={{ margin: '0 auto', display: 'block' }} />
+        <p style={{ fontFamily: FONTS.cormorant, fontSize: 19, color: C.cafe, lineHeight: 1.55, margin: '12px auto 14px', maxWidth: 300 }}>
+          Cada atendimento é exclusivo. Reservo o tempo certo para que você saia daqui se sentindo renovada.
+        </p>
+        <div style={{ fontFamily: FONTS.allura, fontSize: 38, color: C.taupe, lineHeight: 1 }}>by Natielle</div>
+      </div>
+
+      {/* FOOTER */}
+      <div style={{ padding: '24px 24px 28px', textAlign: 'center', borderTop: `1px solid ${C.line}`, marginTop: 18 }}>
+        <Image src="/assets/logo-monogram.png" alt="" width={64} height={64} style={{ width: 64, height: 'auto', opacity: 0.9, margin: '0 auto', display: 'block' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 14 }}>
+          <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontFamily: FONTS.montserrat, fontSize: 12, color: C.muted }}>
+            <Icon name="instagram" size={15} stroke={C.taupe} /> @luminails.studio
+          </span>
+        </div>
+        <div style={{ fontFamily: FONTS.montserrat, fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.6 }}>
+          Rua das Acácias, 120 · sala 4 — São Paulo, SP<br />Atendimento com hora marcada
+        </div>
+      </div>
+
+      {/* CTA FIXO */}
+      <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, padding: '12px 20px 26px', background: 'linear-gradient(transparent, rgba(250,248,246,0.96) 28%)', zIndex: 10 }}>
+        <div style={{ maxWidth: 480, margin: '0 auto' }}>
+          <Link href="/agendar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', border: 'none', cursor: 'pointer', background: C.taupe, color: C.white, fontFamily: FONTS.montserrat, fontWeight: 600, fontSize: 15, letterSpacing: 0.3, padding: '15px 22px', borderRadius: 16, boxShadow: '0 8px 20px rgba(141,123,109,0.30)', textDecoration: 'none' }}>
+            <Icon name="sparkle" size={16} stroke="#fff" /> Agendar meu horário
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }

@@ -2,246 +2,147 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { format } from 'date-fns'
-import { ArrowLeft, Trash2, PlusCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DAY_NAMES } from '@/lib/utils'
-import type { WorkingDay, BlockedSlot } from '@/lib/types'
+import { Icon } from '@/components/icon'
+import { C, FONTS, hhmm, prettyDate, WD_LONG, OPEN_MIN, CLOSE_MIN, SLOT_STEP } from '@/lib/design'
+
+interface BlockItem { id: string; date: string; allDay: boolean; start?: number; end?: number; label?: string }
+interface WorkingDay { day_of_week: number; is_active: boolean }
+
+const DEFAULT_DAYS: WorkingDay[] = [
+  { day_of_week: 0, is_active: false }, // Dom
+  { day_of_week: 1, is_active: true  }, // Seg
+  { day_of_week: 2, is_active: true  }, // Ter
+  { day_of_week: 3, is_active: true  }, // Qua
+  { day_of_week: 4, is_active: true  }, // Qui
+  { day_of_week: 5, is_active: true  }, // Sex
+  { day_of_week: 6, is_active: true  }, // Sáb
+]
+
+const ORDER = [1, 2, 3, 4, 5, 6, 0] // Seg → Sáb → Dom
+
+function Switch({ on, onClick }: { on: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} style={{
+      width: 46, height: 28, borderRadius: 99, border: 'none', cursor: 'pointer', padding: 3,
+      background: on ? C.taupe : '#d9cfc6', transition: 'background .2s', position: 'relative', flexShrink: 0,
+    }}>
+      <span style={{
+        display: 'block', width: 22, height: 22, borderRadius: 99, background: '#fff',
+        transform: on ? 'translateX(18px)' : 'translateX(0)', transition: 'transform .2s',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+      }} />
+    </button>
+  )
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <div style={{ fontFamily: FONTS.montserrat, fontSize: 11, fontWeight: 600, letterSpacing: 1.5, color: C.muted, textTransform: 'uppercase', margin: '0 0 10px 4px' }}>{children}</div>
+}
 
 export default function ConfiguracoesPage() {
   const router = useRouter()
-  const [workingDays, setWorkingDays] = useState<WorkingDay[]>([])
-  const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([])
-  const [loadingDays, setLoadingDays] = useState(true)
-  const [loadingBlocked, setLoadingBlocked] = useState(true)
+  const [workingDays, setWorkingDays] = useState<WorkingDay[]>(DEFAULT_DAYS)
+  const [blocks, setBlocks] = useState<BlockItem[]>([])
 
-  const [blockDate, setBlockDate] = useState('')
-  const [blockStart, setBlockStart] = useState('')
-  const [blockEnd, setBlockEnd] = useState('')
-  const [blockReason, setBlockReason] = useState('')
-  const [blockingAll, setBlockingAll] = useState(true)
-  const [saving, setSaving] = useState(false)
-
+  // Tenta carregar do servidor; usa defaults se Supabase não estiver conectado
   useEffect(() => {
     fetch('/api/admin/working-days')
-      .then((r) => r.json())
-      .then((d) => setWorkingDays(d.working_days ?? []))
-      .finally(() => setLoadingDays(false))
+      .then(r => r.json())
+      .then(d => { if (d.working_days?.length) setWorkingDays(d.working_days) })
+      .catch(() => {})
 
     fetch('/api/admin/blocked-slots')
-      .then((r) => r.json())
-      .then((d) => setBlockedSlots(d.blocked_slots ?? []))
-      .finally(() => setLoadingBlocked(false))
+      .then(r => r.json())
+      .then(d => { if (d.blocked_slots?.length) setBlocks(d.blocked_slots) })
+      .catch(() => {})
   }, [])
 
-  const toggleDay = async (day: WorkingDay) => {
-    const updated = !day.is_active
-    setWorkingDays((prev) =>
-      prev.map((d) => (d.day_of_week === day.day_of_week ? { ...d, is_active: updated } : d)),
+  const toggleDay = async (dayOfWeek: number) => {
+    const updated = workingDays.map(d =>
+      d.day_of_week === dayOfWeek ? { ...d, is_active: !d.is_active } : d
     )
+    setWorkingDays(updated)
     await fetch('/api/admin/working-days', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ day_of_week: day.day_of_week, is_active: updated }),
-    })
-  }
-
-  const addBlock = async () => {
-    if (!blockDate) return
-    setSaving(true)
-    try {
-      const res = await fetch('/api/admin/blocked-slots', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          blocked_date: blockDate,
-          start_time: blockingAll ? null : blockStart || null,
-          end_time: blockingAll ? null : blockEnd || null,
-          reason: blockReason || null,
-        }),
-      })
-      const json = await res.json()
-      if (res.ok) {
-        setBlockedSlots((prev) => [...prev, json.blocked_slot])
-        setBlockDate('')
-        setBlockStart('')
-        setBlockEnd('')
-        setBlockReason('')
-      }
-    } finally {
-      setSaving(false)
-    }
+      body: JSON.stringify({ day_of_week: dayOfWeek, is_active: updated.find(d => d.day_of_week === dayOfWeek)?.is_active }),
+    }).catch(() => {})
   }
 
   const removeBlock = async (id: string) => {
-    await fetch(`/api/admin/blocked-slots/${id}`, { method: 'DELETE' })
-    setBlockedSlots((prev) => prev.filter((b) => b.id !== id))
+    setBlocks(prev => prev.filter(b => b.id !== id))
+    await fetch(`/api/admin/blocked-slots/${id}`, { method: 'DELETE' }).catch(() => {})
   }
 
   return (
-    <div className="min-h-screen bg-pink-50">
-      <header className="bg-white border-b border-pink-100 sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button
-            onClick={() => router.push('/admin/dashboard')}
-            className="text-gray-400 hover:text-pink-600 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="font-bold text-gray-900">Configurações</h1>
-            <p className="text-xs text-gray-400">Toque de Lírio by Natielle</p>
+    <div style={{ minHeight: '100vh', background: C.off, maxWidth: 480, margin: '0 auto' }}>
+      {/* header */}
+      <div style={{ background: C.white, padding: '18px 20px 14px', borderBottom: `1px solid ${C.line}`, display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 5 }}>
+        <button onClick={() => router.push('/admin/dashboard')} style={{ width: 38, height: 38, borderRadius: 12, border: `1px solid ${C.line}`, background: C.off, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon name="chevronL" size={18} />
+        </button>
+        <h2 style={{ fontFamily: FONTS.playfair, fontSize: 20, color: C.ink, margin: 0, fontWeight: 500 }}>Configurações</h2>
+      </div>
+
+      <div style={{ flex: 1, padding: '20px 20px 40px' }}>
+
+        {/* Janela de atendimento */}
+        <SectionTitle>Janela de atendimento</SectionTitle>
+        <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.line}`, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 26 }}>
+          <Icon name="clock" size={20} stroke={C.rose} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: FONTS.montserrat, fontSize: 14, fontWeight: 600, color: C.ink }}>16:00 — 20:00</div>
+            <div style={{ fontFamily: FONTS.montserrat, fontSize: 11.5, color: C.muted }}>Horário base do estúdio</div>
           </div>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(216,182,164,0.22)', color: C.cafe, fontFamily: FONTS.montserrat, fontSize: 11.5, fontWeight: 600, letterSpacing: 0.4, padding: '5px 11px', borderRadius: 999 }}>fixo</span>
         </div>
-      </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-        {/* Working days */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Dias de atendimento</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingDays ? (
-              <p className="text-sm text-gray-400">Carregando...</p>
-            ) : (
-              <div className="space-y-2">
-                {workingDays.map((day) => (
-                  <div
-                    key={day.day_of_week}
-                    className="flex items-center justify-between py-2 border-b border-pink-50 last:border-0"
-                  >
-                    <span className="text-sm font-medium text-gray-700">
-                      {DAY_NAMES[day.day_of_week]}
-                    </span>
-                    <button
-                      onClick={() => toggleDay(day)}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                        day.is_active ? 'bg-pink-600' : 'bg-gray-200'
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
-                          day.is_active ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </button>
+        {/* Dias da semana */}
+        <SectionTitle>Dias de atendimento</SectionTitle>
+        <div style={{ background: C.white, borderRadius: 16, border: `1px solid ${C.line}`, overflow: 'hidden', marginBottom: 26 }}>
+          {ORDER.map((d, i) => {
+            const wd = workingDays.find(w => w.day_of_week === d)
+            const open = wd?.is_active ?? false
+            return (
+              <div key={d} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < ORDER.length - 1 ? `1px solid ${C.faint}` : 'none' }}>
+                <span style={{ flex: 1, fontFamily: FONTS.montserrat, fontSize: 14.5, fontWeight: 500, color: open ? C.ink : C.muted }}>{WD_LONG[d]}</span>
+                <span style={{ fontFamily: FONTS.montserrat, fontSize: 12, color: C.muted, marginRight: 4 }}>{open ? 'aberto' : 'fechado'}</span>
+                <Switch on={open} onClick={() => toggleDay(d)} />
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Bloqueios ativos */}
+        <SectionTitle>Bloqueios ativos</SectionTitle>
+        {blocks.length === 0 ? (
+          <p style={{ fontFamily: FONTS.cormorant, fontStyle: 'italic', fontSize: 16, color: C.muted, padding: '4px 2px' }}>
+            Nenhum bloqueio cadastrado.
+          </p>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {blocks.slice().sort((a, b) => a.date.localeCompare(b.date)).map(b => {
+              const d = new Date(b.date + 'T00:00:00')
+              return (
+                <div key={b.id} style={{ background: C.white, borderRadius: 14, border: `1px solid ${C.line}`, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: C.areia, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon name="ban" size={18} stroke={C.taupe} />
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Block a date */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Bloquear data ou horário</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Data</Label>
-              <Input
-                type="date"
-                value={blockDate}
-                onChange={(e) => setBlockDate(e.target.value)}
-                min={format(new Date(), 'yyyy-MM-dd')}
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setBlockingAll(true)}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${
-                  blockingAll
-                    ? 'bg-pink-600 text-white border-pink-600'
-                    : 'border-pink-200 text-pink-700 hover:bg-pink-50'
-                }`}
-              >
-                Dia inteiro
-              </button>
-              <button
-                onClick={() => setBlockingAll(false)}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-all ${
-                  !blockingAll
-                    ? 'bg-pink-600 text-white border-pink-600'
-                    : 'border-pink-200 text-pink-700 hover:bg-pink-50'
-                }`}
-              >
-                Horário específico
-              </button>
-            </div>
-
-            {!blockingAll && (
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <Label>Início</Label>
-                  <Input type="time" value={blockStart} onChange={(e) => setBlockStart(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Fim</Label>
-                  <Input type="time" value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)} />
-                </div>
-              </div>
-            )}
-
-            <div className="space-y-1.5">
-              <Label>Motivo (opcional)</Label>
-              <Input
-                placeholder="Ex: Feriado, compromisso pessoal..."
-                value={blockReason}
-                onChange={(e) => setBlockReason(e.target.value)}
-              />
-            </div>
-
-            <Button onClick={addBlock} disabled={!blockDate || saving} className="w-full gap-2">
-              <PlusCircle className="w-4 h-4" />
-              {saving ? 'Salvando...' : 'Adicionar bloqueio'}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Existing blocks */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Bloqueios ativos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingBlocked ? (
-              <p className="text-sm text-gray-400">Carregando...</p>
-            ) : blockedSlots.length === 0 ? (
-              <p className="text-sm text-gray-400">Nenhum bloqueio cadastrado.</p>
-            ) : (
-              <div className="space-y-2">
-                {blockedSlots.map((b) => (
-                  <div
-                    key={b.id}
-                    className="flex items-center justify-between p-3 bg-amber-50 border border-amber-200 rounded-lg"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {format(new Date(b.blocked_date + 'T00:00:00'), 'dd/MM/yyyy')}
-                        {b.start_time && b.end_time
-                          ? ` — ${b.start_time.slice(0, 5)} às ${b.end_time.slice(0, 5)}`
-                          : ' — Dia inteiro'}
-                      </p>
-                      {b.reason && <p className="text-xs text-gray-500 mt-0.5">{b.reason}</p>}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontFamily: FONTS.montserrat, fontSize: 13.5, fontWeight: 600, color: C.ink }}>{prettyDate(d)}</div>
+                    <div style={{ fontFamily: FONTS.montserrat, fontSize: 11.5, color: C.muted }}>
+                      {b.allDay ? 'Dia inteiro' : `${hhmm(b.start ?? OPEN_MIN)} – ${hhmm(b.end ?? CLOSE_MIN)}`}
+                      {b.label ? ` · ${b.label}` : ''}
                     </div>
-                    <button
-                      onClick={() => removeBlock(b.id)}
-                      className="text-red-400 hover:text-red-600 transition-colors p-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                  <button onClick={() => removeBlock(b.id)} style={{ width: 34, height: 34, borderRadius: 10, border: 'none', background: C.areia, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Icon name="x" size={15} stroke={C.muted} />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )
