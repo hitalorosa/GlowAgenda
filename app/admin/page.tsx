@@ -6,6 +6,29 @@ import Image from 'next/image'
 import { Icon } from '@/components/icon'
 import { C, FONTS } from '@/lib/design'
 
+// Definido FORA do componente para ter referência estável —
+// evita que o React desmonte/remonte o input a cada keystroke.
+function Field({ val, set, type, ph, icon }: {
+  val: string
+  set: (v: string) => void
+  type: string
+  ph: string
+  icon: 'mail' | 'lock'
+}) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: C.white, border: `1.5px solid ${C.line}`, borderRadius: 14, padding: '0 14px', marginBottom: 12 }}>
+      <Icon name={icon} size={18} stroke={C.rose} />
+      <input
+        type={type}
+        value={val}
+        placeholder={ph}
+        onChange={e => set(e.target.value)}
+        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', padding: '15px 0', fontFamily: FONTS.montserrat, fontSize: 14.5, color: C.ink }}
+      />
+    </div>
+  )
+}
+
 export default function AdminLoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('natielle@luminails.studio')
@@ -31,14 +54,6 @@ export default function AdminLoginPage() {
       setLoading(false)
     }
   }
-
-  const Field = ({ val, set, type, ph, icon }: { val: string; set: (v: string) => void; type: string; ph: string; icon: 'mail' | 'lock' }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: C.white, border: `1.5px solid ${C.line}`, borderRadius: 14, padding: '0 14px', marginBottom: 12 }}>
-      <Icon name={icon} size={18} stroke={C.rose} />
-      <input type={type} value={val} placeholder={ph} onChange={e => set(e.target.value)}
-        style={{ flex: 1, border: 'none', outline: 'none', background: 'transparent', padding: '15px 0', fontFamily: FONTS.montserrat, fontSize: 14.5, color: C.ink }} />
-    </div>
-  )
 
   return (
     <div style={{ background: `radial-gradient(120% 80% at 50% 0%, ${C.white}, ${C.areia} 70%)`, minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 28px', maxWidth: 420, margin: '0 auto' }}>
