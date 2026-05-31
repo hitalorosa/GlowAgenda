@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { DayPicker } from 'react-day-picker'
 import { ptBR } from 'date-fns/locale'
-import { format, addDays, isBefore, startOfDay } from 'date-fns'
+import { format, addDays, startOfDay } from 'date-fns'
 import { ArrowLeft, ArrowRight, Clock, Check, Copy, ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,6 +13,14 @@ import { Label } from '@/components/ui/label'
 import { formatDuration } from '@/lib/utils'
 import type { Service } from '@/lib/types'
 import 'react-day-picker/style.css'
+
+// Serviços temporários até integração com Supabase
+const MOCK_SERVICES: Service[] = [
+  { id: '1', name: 'Spá de mão', duration_minutes: 15 },
+  { id: '2', name: 'Esmaltação normal com cuticulagem', duration_minutes: 90 },
+  { id: '3', name: 'Esmaltação em gel com cuticulagem', duration_minutes: 120 },
+  { id: '4', name: 'Cuticulagem e extensão de unha', duration_minutes: 180 },
+]
 
 type Step = 1 | 2 | 3
 
@@ -27,7 +35,7 @@ interface BookingData {
 export default function AgendarPage() {
   const router = useRouter()
   const [step, setStep] = useState<Step>(1)
-  const [services, setServices] = useState<Service[]>([])
+  const services = MOCK_SERVICES
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -43,12 +51,6 @@ export default function AgendarPage() {
     clientName: '',
     clientPhone: '',
   })
-
-  useEffect(() => {
-    fetch('/api/services')
-      .then((r) => r.json())
-      .then((d) => setServices(d.services ?? []))
-  }, [])
 
   const loadSlots = useCallback(async (service: Service, date: Date) => {
     setLoadingSlots(true)
