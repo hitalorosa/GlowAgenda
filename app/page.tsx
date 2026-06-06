@@ -1,14 +1,10 @@
+'use client'
+
 import Link from 'next/link'
 import Image from 'next/image'
 import { Icon } from '@/components/icon'
 import { C, FONTS, durLabel } from '@/lib/design'
-
-const SERVICES = [
-  { id: '1', name: 'Spá de mão',          sub: '',                dur: 15,  blurb: 'Hidratação e esfoliação para mãos macias e renovadas.' },
-  { id: '2', name: 'Esmaltação normal',    sub: 'com cuticulagem', dur: 90,  blurb: 'Cuticulagem completa e esmalte tradicional com acabamento impecável.' },
-  { id: '3', name: 'Esmaltação em gel',    sub: 'com cuticulagem', dur: 120, blurb: 'Cor intensa e duradoura em gel, com brilho que dura semanas.' },
-  { id: '4', name: 'Extensão de unha',     sub: 'e cuticulagem',   dur: 180, blurb: 'Alongamento sob medida com modelagem e finalização premium.' },
-]
+import { useStudioConfig } from '@/lib/use-config'
 
 function Photo({ label, h = 150 }: { label: string; h?: number }) {
   const id = label.replace(/\s/g, '')
@@ -29,15 +25,11 @@ function Photo({ label, h = 150 }: { label: string; h?: number }) {
 }
 
 export default function HomePage() {
+  const { config } = useStudioConfig()
+  const { services, footer } = config
+
   return (
     <div style={{ background: C.off, minHeight: '100vh', paddingBottom: 96 }}>
-
-      {/* Admin link */}
-      <div style={{ position: 'absolute', top: 16, right: 20, zIndex: 10 }}>
-        <Link href="/admin" style={{ fontFamily: FONTS.montserrat, fontSize: 11, fontWeight: 600, letterSpacing: 0.5, color: C.muted, textDecoration: 'none' }}>
-          Área da profissional
-        </Link>
-      </div>
 
       {/* HERO */}
       <div style={{
@@ -52,8 +44,11 @@ export default function HomePage() {
           style={{ width: 184, height: 'auto', maxWidth: '64%', display: 'block', margin: '0 auto' }}
           priority
         />
-        <p style={{ fontFamily: FONTS.cormorant, fontStyle: 'italic', fontSize: 19, color: C.taupe, margin: '14px auto 0', maxWidth: 280, lineHeight: 1.4 }}>
-          O cuidado das suas mãos, no seu tempo — agende online em segundos.
+        <h1 style={{ fontFamily: FONTS.playfair, fontSize: 22, fontWeight: 500, color: C.ink, margin: '16px auto 6px', maxWidth: 300, lineHeight: 1.3 }}>
+          Seu momento de autocuidado começa aqui
+        </h1>
+        <p style={{ fontFamily: FONTS.cormorant, fontStyle: 'italic', fontSize: 18, color: C.taupe, margin: '0 auto', maxWidth: 280, lineHeight: 1.4 }}>
+          Agende online e reserve um tempo para você
         </p>
         <div style={{ marginTop: 22, maxWidth: 250, margin: '22px auto 0' }}>
           <Link href="/agendar" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', border: 'none', cursor: 'pointer', background: C.taupe, color: C.white, fontFamily: FONTS.montserrat, fontWeight: 600, fontSize: 15, letterSpacing: 0.3, padding: '15px 22px', borderRadius: 16, boxShadow: '0 8px 20px rgba(141,123,109,0.30)', textDecoration: 'none' }}>
@@ -77,7 +72,7 @@ export default function HomePage() {
           <h2 style={{ fontFamily: FONTS.playfair, fontSize: 26, color: C.ink, margin: '4px 0 0', fontWeight: 500 }}>Escolha seu cuidado</h2>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxWidth: 480, margin: '0 auto' }}>
-          {SERVICES.map(s => (
+          {services.map(s => (
             <Link key={s.id} href="/agendar" style={{ textDecoration: 'none', display: 'block' }}>
               <div style={{ background: C.white, border: `1.5px solid ${C.line}`, borderRadius: 18, padding: '16px 18px', boxShadow: '0 2px 8px rgba(107,91,82,0.04)', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
@@ -88,10 +83,15 @@ export default function HomePage() {
                   </div>
                   <Icon name="sparkle" size={20} stroke={C.rose} style={{ flexShrink: 0, marginTop: 2 }} />
                 </div>
-                <div style={{ marginTop: 12 }}>
+                <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(216,182,164,0.22)', color: C.cafe, fontFamily: FONTS.montserrat, fontSize: 11.5, fontWeight: 600, letterSpacing: 0.4, padding: '5px 11px', borderRadius: 999 }}>
                     <Icon name="clock" size={13} stroke={C.cafe} /> {durLabel(s.dur)}
                   </span>
+                  {s.price !== null && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(141,123,109,0.12)', color: C.taupe, fontFamily: FONTS.montserrat, fontSize: 11.5, fontWeight: 700, letterSpacing: 0.4, padding: '5px 11px', borderRadius: 999 }}>
+                      R$ {s.price}
+                    </span>
+                  )}
                 </div>
               </div>
             </Link>
@@ -117,7 +117,7 @@ export default function HomePage() {
       <div style={{ padding: '30px 24px 10px', textAlign: 'center', maxWidth: 480, margin: '0 auto' }}>
         <Icon name="sparkle" size={22} stroke={C.rose} style={{ margin: '0 auto', display: 'block' }} />
         <p style={{ fontFamily: FONTS.cormorant, fontSize: 19, color: C.cafe, lineHeight: 1.55, margin: '12px auto 14px', maxWidth: 300 }}>
-          Cada atendimento é exclusivo. Reservo o tempo certo para que você saia daqui se sentindo renovada.
+          Obrigada por reservar seu horário, será um prazer receber você e cuidar do seu momento de autocuidado.
         </p>
         <div style={{ fontFamily: FONTS.allura, fontSize: 38, color: C.taupe, lineHeight: 1 }}>by Natielle</div>
       </div>
@@ -127,11 +127,11 @@ export default function HomePage() {
         <Image src="/assets/logo-monogram.png" alt="" width={64} height={64} style={{ width: 64, height: 'auto', opacity: 0.9, margin: '0 auto', display: 'block' }} />
         <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 14 }}>
           <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', fontFamily: FONTS.montserrat, fontSize: 12, color: C.muted }}>
-            <Icon name="instagram" size={15} stroke={C.taupe} /> @luminails.studio
+            <Icon name="instagram" size={15} stroke={C.taupe} /> {footer.instagram}
           </span>
         </div>
         <div style={{ fontFamily: FONTS.montserrat, fontSize: 11, color: C.muted, marginTop: 10, lineHeight: 1.6 }}>
-          Rua das Acácias, 120 · sala 4 — São Paulo, SP<br />Atendimento com hora marcada
+          {footer.address}<br />{footer.note}
         </div>
       </div>
 

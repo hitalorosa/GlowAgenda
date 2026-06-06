@@ -8,17 +8,14 @@ import {
   C, FONTS, durLabel, hhmm, prettyDate, nextDays, dateKey, sameDay, getMockSlots, WD_SHORT,
 } from '@/lib/design'
 
+import { DEFAULT_CONFIG, ServiceDef } from '@/lib/site-config'
+
 // ── tipos ──────────────────────────────────────────────────────
-interface Service { id: string; name: string; sub: string; dur: number; blurb: string }
+type Service = ServiceDef
 interface Draft { serviceId: string | null; date: Date | null; time: number | null; name: string; phone: string }
 
-// ── serviços fixos (mock até Supabase) ────────────────────────
-const SERVICES: Service[] = [
-  { id: '1', name: 'Spá de mão',       sub: '',                dur: 15,  blurb: 'Hidratação e esfoliação para mãos macias e renovadas.' },
-  { id: '2', name: 'Esmaltação normal', sub: 'com cuticulagem', dur: 90,  blurb: 'Cuticulagem completa e esmalte tradicional com acabamento impecável.' },
-  { id: '3', name: 'Esmaltação em gel', sub: 'com cuticulagem', dur: 120, blurb: 'Cor intensa e duradoura em gel, com brilho que dura semanas.' },
-  { id: '4', name: 'Extensão de unha',  sub: 'e cuticulagem',   dur: 180, blurb: 'Alongamento sob medida com modelagem e finalização premium.' },
-]
+// ── serviços (fonte: lib/site-config.ts) ──────────────────────
+const SERVICES: Service[] = DEFAULT_CONFIG.services
 
 // ── componentes ────────────────────────────────────────────────
 function Chip({ children, tone = 'rose' }: { children: React.ReactNode; tone?: 'rose' | 'taupe' }) {
@@ -112,8 +109,11 @@ function ServiceCard({ svc, selected, onClick }: { svc: Service; selected: boole
           ? <div style={{ width: 24, height: 24, borderRadius: 99, background: C.taupe, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><Icon name="check" size={15} stroke="#fff" sw={2.2} /></div>
           : <Icon name="sparkle" size={20} stroke={C.rose} style={{ flexShrink: 0, marginTop: 2 }} />}
       </div>
-      <div style={{ marginTop: 12 }}>
+      <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <Chip><Icon name="clock" size={13} stroke={C.cafe} /> {durLabel(svc.dur)}</Chip>
+        {svc.price !== null && (
+          <Chip tone="taupe">R$ {svc.price}</Chip>
+        )}
       </div>
     </button>
   )
